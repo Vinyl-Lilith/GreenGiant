@@ -44,7 +44,7 @@ router.put('/username', allowWrite, async (req, res) => {
     await ActivityLog.create({
       user: req.user._id,
       username: newUsername,
-      action: 'password_changed', // Reusing this action type
+      action: 'username_changed',
       details: { oldUsername, newUsername },
       ipAddress: req.ip,
     });
