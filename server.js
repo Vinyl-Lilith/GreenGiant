@@ -17,11 +17,28 @@ const app = express();
 const server = http.createServer(app);
 
 // ===================================================================
+// CORS ORIGINS — parse and trim so spaces in env vars don't break it
+// ===================================================================
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+  : [];
+
+console.log('Allowed CORS origins:', allowedOrigins);
+
+const originFn = (origin, callback) => {
+  // Allow server-to-server, curl, Postman (no origin header)
+  if (!origin) return callback(null, true);
+  if (allowedOrigins.includes(origin)) return callback(null, true);
+  console.warn(`CORS blocked: ${origin}`);
+  callback(new Error(`CORS: origin ${origin} not allowed`));
+};
+
+// ===================================================================
 // SOCKET.IO SETUP
 // ===================================================================
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGINS?.split(',') || '*',
+    origin: originFn,
     credentials: true,
   },
 });
@@ -39,11 +56,10 @@ app.use(helmet({
 }));
 
 // CORS
-const corsOptions = {
-  origin: process.env.CORS_ORIGINS?.split(',') || '*',
+app.use(cors({
+  origin: originFn,
   credentials: true,
-};
-app.use(cors(corsOptions));
+}));
 
 // Body parser
 app.use(express.json({ limit: '10mb' }));
@@ -186,9 +202,7 @@ io.on('connection', async (socket) => {
     });
   });
 
-  // Custom events (for future expansion)
   socket.on('request_live_data', () => {
-    // Could emit latest reading immediately
     socket.emit('live_data_requested');
   });
 });
@@ -200,10 +214,8 @@ const PORT = process.env.PORT || 10000;
 
 const startServer = async () => {
   try {
-    // Connect to MongoDB
     await connectDB();
 
-    // Start server
     server.listen(PORT, () => {
       console.log('');
       console.log('╔══════════════════════════════════════════════════════════╗');
@@ -221,13 +233,11 @@ const startServer = async () => {
   }
 };
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Promise Rejection:', err);
   server.close(() => process.exit(1));
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Shutting down gracefully...');
   server.close(() => {
@@ -244,7 +254,6 @@ process.on('SIGINT', () => {
   });
 });
 
-// Start the server
 startServer();
 
 module.exports = app;
