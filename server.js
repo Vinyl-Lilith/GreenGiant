@@ -79,16 +79,6 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-// Health check — BEFORE rate limiter so Pi polling doesn't get throttled
-app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    service: 'greenhouse-backend',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  });
-});
-
 app.use('/api/', limiter);
 
 // ===================================================================
@@ -101,6 +91,16 @@ app.use('/api/thresholds', require('./routes/thresholds'));
 app.use('/api/manual', require('./routes/manual'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/settings', require('./routes/settings'));
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    service: 'greenhouse-backend',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
+});
 
 // Root endpoint
 app.get('/', (req, res) => {
