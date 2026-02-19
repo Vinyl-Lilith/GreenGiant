@@ -52,6 +52,7 @@ const ActivityLogSchema = new mongoose.Schema({
       'password_changed',
       'forgot_password_approved',
       'forgot_password_rejected',
+      'username_changed',
     ],
   },
   details: mongoose.Schema.Types.Mixed, // Flexible field for action-specific data
